@@ -145,6 +145,39 @@
           }
         }
       }
+    },
+    "nodeAuth": {
+      "title": "节点账号",
+      "description": "使用账号密码 + 本机设备指纹登录，获取设备专属 Token 并自动注入 Hysteria2 节点。",
+      "status": "登录状态",
+      "notLoggedIn": "未登录",
+      "deviceFp": "设备指纹",
+      "expiresAt": "Token 到期",
+      "devices": "设备数",
+      "expired": "已过期",
+      "fields": {
+        "server": "服务器地址",
+        "username": "用户名",
+        "password": "密码"
+      },
+      "placeholders": {
+        "server": "https://auth.example.com",
+        "username": "用户名",
+        "password": "密码"
+      },
+      "actions": {
+        "login": "登录",
+        "logout": "登出",
+        "relogin": "重新登录"
+      },
+      "messages": {
+        "loginSuccess": "登录成功",
+        "loginFailed": "登录失败",
+        "logoutSuccess": "已登出",
+        "serverRequired": "服务器地址不能为空",
+        "usernameRequired": "用户名不能为空",
+        "passwordRequired": "密码不能为空"
+      }
     }
   },
   "components": {

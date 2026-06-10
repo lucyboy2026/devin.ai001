@@ -213,6 +213,11 @@ mod app_init {
             cmd::restore_webdav_backup,
             cmd::get_unlock_items,
             cmd::check_media_unlock,
+            cmd::node_auth_get_device_fp,
+            cmd::node_auth_get_status,
+            cmd::node_auth_login,
+            cmd::node_auth_logout,
+            cmd::node_auth_renew,
         ]
     }
 }

@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import { MihomoWebSocket } from 'tauri-plugin-mihomo-api'
 
+import { NodeAuthGate } from './components/auth/node-auth-gate'
 import { BaseErrorBoundary } from './components/base'
 import { router } from './pages/_routers'
 import { AppDataProvider } from './providers/app-data-provider'
@@ -55,6 +56,7 @@ const initializeApp = (initialThemeMode: 'light' | 'dark') => {
             <WindowProvider>
               <AppDataProvider>
                 <RouterProvider router={router} />
+                <NodeAuthGate />
               </AppDataProvider>
             </WindowProvider>
           </QueryClientProvider>

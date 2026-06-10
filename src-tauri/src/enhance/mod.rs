@@ -577,6 +577,41 @@ async fn apply_dns_settings(mut config: Mapping, enable_dns_settings: bool) -> M
     config
 }
 
+/// 注入节点账号 Token（组件二）。
+///
+/// 若本地存有有效的设备 Token，则把所有 `type: hysteria2`（含 `hysteria`）节点的
+/// `password` 字段覆盖为该 Token，实现「Token 与设备指纹+账号绑定」。无有效 Token
+/// 时原样返回，不影响普通使用。
+fn inject_node_auth_token(mut config: Mapping) -> Mapping {
+    let token = match crate::feat::node_auth::current_token() {
+        Some(token) => token,
+        None => return config,
+    };
+
+    let Some(Value::Sequence(proxies)) = config.get_mut("proxies") else {
+        return config;
+    };
+
+    let mut injected = 0usize;
+    for proxy in proxies.iter_mut() {
+        let Value::Mapping(proxy) = proxy else { continue };
+        let is_hysteria2 = proxy
+            .get("type")
+            .and_then(|v| v.as_str())
+            .map(|t| t == "hysteria2" || t == "hysteria")
+            .unwrap_or(false);
+        if is_hysteria2 {
+            proxy.insert(Value::String("password".to_string()), Value::String(token.clone()));
+            injected += 1;
+        }
+    }
+
+    if injected > 0 {
+        logging!(info, Type::Config, "已为 {injected} 个 hysteria2 节点注入设备 Token");
+    }
+    config
+}
+
 /// Enhance mode
 /// 返回最终订阅、该订阅包含的键、和script执行的结果
 pub async fn enhance() -> Result<(Mapping, HashSet<String>, HashMap<String, ResultLog>)> {
@@ -643,6 +678,9 @@ pub async fn enhance() -> Result<(Mapping, HashSet<String>, HashMap<String, Resu
     let mut config = apply_builtin_scripts(config, clash_core, enable_builtin).await;
 
     config = cleanup_proxy_groups(config);
+
+    // 注入节点账号 Token（组件二两步鉴权）：把 hysteria2 节点的 password 覆盖为当前设备 Token
+    config = inject_node_auth_token(config);
 
     config = use_tun(config, enable_tun);
     config = use_sort(config);

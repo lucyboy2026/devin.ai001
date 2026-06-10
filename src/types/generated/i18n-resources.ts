@@ -1173,6 +1173,39 @@ export interface TranslationResources {
             open: string
           }
         }
+        nodeAuth: {
+          actions: {
+            login: string
+            logout: string
+            relogin: string
+          }
+          description: string
+          deviceFp: string
+          devices: string
+          expired: string
+          expiresAt: string
+          fields: {
+            password: string
+            server: string
+            username: string
+          }
+          messages: {
+            loginFailed: string
+            loginSuccess: string
+            logoutSuccess: string
+            passwordRequired: string
+            serverRequired: string
+            usernameRequired: string
+          }
+          notLoggedIn: string
+          placeholders: {
+            password: string
+            server: string
+            username: string
+          }
+          status: string
+          title: string
+        }
         proxyControl: {
           actions: {
             installService: string
