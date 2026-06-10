@@ -585,3 +585,32 @@ export const isPortInUse = async (port: number) => {
     return false
   }
 }
+
+// 节点账号两步鉴权（组件二）
+export async function nodeAuthGetStatus() {
+  return invoke<INodeAuthStatus>('node_auth_get_status')
+}
+
+export async function nodeAuthGetDeviceFp() {
+  return invoke<string>('node_auth_get_device_fp')
+}
+
+export async function nodeAuthLogin(
+  server: string,
+  username: string,
+  password: string,
+) {
+  return invoke<INodeAuthStatus>('node_auth_login', {
+    server,
+    username,
+    password,
+  })
+}
+
+export async function nodeAuthLogout() {
+  return invoke<void>('node_auth_logout')
+}
+
+export async function nodeAuthRenew() {
+  return invoke<boolean>('node_auth_renew')
+}

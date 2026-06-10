@@ -145,6 +145,39 @@
           }
         }
       }
+    },
+    "nodeAuth": {
+      "title": "Node Account",
+      "description": "Sign in with username/password + this device's fingerprint to obtain a device-bound token, auto-injected into Hysteria2 nodes.",
+      "status": "Login status",
+      "notLoggedIn": "Not logged in",
+      "deviceFp": "Device fingerprint",
+      "expiresAt": "Token expires",
+      "devices": "Devices",
+      "expired": "Expired",
+      "fields": {
+        "server": "Server address",
+        "username": "Username",
+        "password": "Password"
+      },
+      "placeholders": {
+        "server": "https://auth.example.com",
+        "username": "Username",
+        "password": "Password"
+      },
+      "actions": {
+        "login": "Sign in",
+        "logout": "Sign out",
+        "relogin": "Sign in again"
+      },
+      "messages": {
+        "loginSuccess": "Signed in",
+        "loginFailed": "Sign-in failed",
+        "logoutSuccess": "Signed out",
+        "serverRequired": "Server address is required",
+        "usernameRequired": "Username is required",
+        "passwordRequired": "Password is required"
+      }
     }
   },
   "components": {

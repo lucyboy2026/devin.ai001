@@ -266,6 +266,18 @@ interface IClashInfo {
   secret?: string
 }
 
+interface INodeAuthStatus {
+  logged_in: boolean
+  server: string
+  username: string
+  expires_at: string
+  device_fp: string
+  platform: string
+  max_devices?: number | null
+  active_devices?: number | null
+  expired: boolean
+}
+
 interface IProfileItem {
   uid: string
   type?: 'local' | 'remote' | 'merge' | 'script'

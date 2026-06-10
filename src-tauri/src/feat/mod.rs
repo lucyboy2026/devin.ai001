@@ -2,6 +2,7 @@ mod backup;
 mod clash;
 mod config;
 mod icon;
+pub mod node_auth;
 mod profile;
 mod proxy;
 mod window;
