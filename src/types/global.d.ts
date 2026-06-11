@@ -275,7 +275,14 @@ interface INodeAuthStatus {
   platform: string
   max_devices?: number | null
   active_devices?: number | null
+  account_expires_at?: string | null
+  subscription_url: string
   expired: boolean
+}
+
+interface INodeAuthRegisterResult {
+  status: string
+  message: string
 }
 
 interface IProfileItem {

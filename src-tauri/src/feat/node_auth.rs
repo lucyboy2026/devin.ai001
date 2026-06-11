@@ -36,6 +36,12 @@ pub struct NodeAuthState {
     pub max_devices: Option<u32>,
     #[serde(default)]
     pub active_devices: Option<u32>,
+    /// 账号到期时间（使用期限，ISO-8601），长期账号为空
+    #[serde(default)]
+    pub account_expires_at: Option<String>,
+    /// 服务端下发的长期固定订阅链接（/sub/{key}）
+    #[serde(default)]
+    pub subscription_url: String,
 }
 
 /// 回传前端的状态（不含密码与完整 Token）。
@@ -49,17 +55,39 @@ pub struct NodeAuthStatus {
     pub platform: String,
     pub max_devices: Option<u32>,
     pub active_devices: Option<u32>,
+    /// 账号到期时间（使用期限）
+    pub account_expires_at: Option<String>,
+    /// 长期固定订阅链接
+    pub subscription_url: String,
     /// Token 是否已过期
     pub expired: bool,
 }
 
-/// Auth Server `POST /login` 的请求体。
+/// 注册结果（回传前端用于展示审核提示）。
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct NodeAuthRegisterResult {
+    /// 服务端返回的账号状态：pending | active | suspended
+    pub status: String,
+    /// 面向用户的提示文案
+    pub message: String,
+}
+
+/// Auth Server `POST /register` / `POST /login` 共用的请求体。
 #[derive(Debug, Serialize)]
-struct LoginRequest<'a> {
+struct AuthRequest<'a> {
     username: &'a str,
     password: &'a str,
     device_fp: &'a str,
     platform: &'a str,
+}
+
+/// Auth Server `POST /register` 的响应体。
+#[derive(Debug, Deserialize)]
+struct RegisterResponse {
+    #[serde(default)]
+    status: String,
+    #[serde(default)]
+    message: String,
 }
 
 /// Auth Server `POST /login` 的响应体。
@@ -74,6 +102,10 @@ struct LoginResponse {
     max_devices: Option<u32>,
     #[serde(default)]
     active_devices: Option<u32>,
+    #[serde(default)]
+    account_expires_at: Option<String>,
+    #[serde(default)]
+    subscription_url: String,
 }
 
 /// `node-auth.json` 的绝对路径。
@@ -210,7 +242,7 @@ pub async fn login(server: &str, username: &str, password: &str) -> Result<NodeA
     let platform = platform_name();
 
     let url = format!("{server}/login");
-    let body = LoginRequest {
+    let body = AuthRequest {
         username,
         password,
         device_fp: &device_fp,
@@ -254,10 +286,61 @@ pub async fn login(server: &str, username: &str, password: &str) -> Result<NodeA
         platform: platform.to_string(),
         max_devices: parsed.max_devices,
         active_devices: parsed.active_devices,
+        account_expires_at: parsed.account_expires_at,
+        subscription_url: parsed.subscription_url,
     };
     save_state(&state)?;
     logging!(info, Type::Config, "节点账号登录成功: {}", state.username);
     Ok(to_status(&state))
+}
+
+/// 调用 Auth Server `/register` 提交注册（邮箱 + 密码 + 设备指纹）。
+///
+/// 服务端以 202 返回 `{status, message}`：新用户为 `pending`，需等管理员授权。
+/// 不在本地保存任何凭据（注册不等于登录）。
+pub async fn register(server: &str, username: &str, password: &str) -> Result<NodeAuthRegisterResult> {
+    let server = normalize_server(server);
+    let device_fp = device_fingerprint();
+    let platform = platform_name();
+
+    let url = format!("{server}/register");
+    let body = AuthRequest {
+        username,
+        password,
+        device_fp: &device_fp,
+        platform,
+    };
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .context("构建 HTTP 客户端失败")?;
+
+    let resp = client
+        .post(&url)
+        .json(&body)
+        .send()
+        .await
+        .with_context(|| format!("请求 {url} 失败"))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let msg = resp.text().await.unwrap_or_default();
+        anyhow::bail!("注册失败（HTTP {}）：{}", status.as_u16(), msg.trim());
+    }
+
+    let parsed: RegisterResponse = resp.json().await.context("解析注册响应失败")?;
+    logging!(
+        info,
+        Type::Config,
+        "节点账号注册已提交: {} ({})",
+        username,
+        parsed.status
+    );
+    Ok(NodeAuthRegisterResult {
+        status: parsed.status,
+        message: parsed.message,
+    })
 }
 
 /// 返回当前登录状态（供前端展示）。
@@ -311,6 +394,8 @@ fn to_status(state: &NodeAuthState) -> NodeAuthStatus {
         platform: state.platform.clone(),
         max_devices: state.max_devices,
         active_devices: state.active_devices,
+        account_expires_at: state.account_expires_at.clone(),
+        subscription_url: state.subscription_url.clone(),
         expired: is_expired(&state.expires_at),
     }
 }

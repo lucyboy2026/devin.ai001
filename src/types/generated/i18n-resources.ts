@@ -1174,9 +1174,12 @@ export interface TranslationResources {
           }
         }
         nodeAuth: {
+          accountExpiresAt: string
           actions: {
+            importSubscription: string
             login: string
             logout: string
+            register: string
             relogin: string
           }
           description: string
@@ -1185,25 +1188,39 @@ export interface TranslationResources {
           expired: string
           expiresAt: string
           fields: {
+            email: string
             password: string
             server: string
             username: string
           }
           messages: {
+            emailInvalid: string
+            emailRequired: string
             loginFailed: string
             loginSuccess: string
             logoutSuccess: string
             passwordRequired: string
+            registerFailed: string
+            registerSuccess: string
             serverRequired: string
+            subscriptionImported: string
+            subscriptionImportFailed: string
             usernameRequired: string
           }
+          noExpiry: string
           notLoggedIn: string
           placeholders: {
+            email: string
             password: string
             server: string
             username: string
           }
           status: string
+          subscription: string
+          tabs: {
+            login: string
+            register: string
+          }
           title: string
         }
         proxyControl: {
