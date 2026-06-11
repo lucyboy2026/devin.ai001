@@ -7,15 +7,16 @@ use std::str::FromStr;
 
 const SCHEMA: &str = r#"
 CREATE TABLE IF NOT EXISTS users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    email         TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    status        TEXT NOT NULL DEFAULT 'pending', -- pending | active | suspended
-    max_devices   INTEGER NOT NULL DEFAULT 1,
-    expires_at    TEXT,                            -- ISO-8601 (UTC)，授权后才有
-    note          TEXT,
-    created_at    TEXT NOT NULL,
-    authorized_at TEXT
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    email            TEXT NOT NULL UNIQUE,
+    password_hash    TEXT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'pending', -- pending | active | suspended
+    max_devices      INTEGER NOT NULL DEFAULT 1,
+    expires_at       TEXT,                            -- ISO-8601 (UTC)，授权后才有
+    note             TEXT,
+    subscription_key TEXT,                            -- 长期固定的订阅密钥（/sub/{key}）
+    created_at       TEXT NOT NULL,
+    authorized_at    TEXT
 );
 
 CREATE TABLE IF NOT EXISTS devices (
@@ -80,6 +81,16 @@ pub async fn init_pool(database_url: &str) -> Result<SqlitePool> {
             .await
             .with_context(|| format!("建表失败: {stmt}"))?;
     }
+
+    // 针对早期版本库的增量迁移：列已存在时 SQLite 报错，忽略即可。
+    let _ = sqlx::query("ALTER TABLE users ADD COLUMN subscription_key TEXT")
+        .execute(&pool)
+        .await;
+    // 列就绪后再建唯一索引（放在迁移之后，兼容旧库升级）。
+    sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_subkey ON users(subscription_key)")
+        .execute(&pool)
+        .await
+        .context("建 subscription_key 索引失败")?;
 
     Ok(pool)
 }

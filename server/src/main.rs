@@ -56,6 +56,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/register", post(routes::client::register))
         .route("/login", post(routes::client::login))
         .route("/config", get(routes::client::get_config))
+        .route("/sub/:key", get(routes::client::get_subscription))
         .route("/auth", post(routes::client::hysteria_auth))
         // Telegram webhook
         .route("/tg/webhook", post(routes::tg::webhook))

@@ -1,6 +1,6 @@
 //! 客户端 API：注册 / 登录 / 拉取订阅 / hysteria2 鉴权回调。
 
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
@@ -12,7 +12,8 @@ use crate::auth::{gen_token, hash_password, verify_password};
 use crate::clash;
 use crate::error::{AppError, AppResult};
 use crate::models::{
-    count_user_devices, find_device, find_device_by_token, find_user_by_email, find_user_by_id, parse_dt,
+    count_user_devices, ensure_subscription_key, find_device, find_device_by_token, find_user_by_email,
+    find_user_by_id, find_user_by_subscription_key, latest_active_token, parse_dt,
 };
 use crate::notify;
 use crate::state::AppState;
@@ -138,6 +139,8 @@ pub struct LoginResponse {
     pub active_devices: u32,
     /// 账号到期时间（用于展示「使用期限」），长期为空
     pub account_expires_at: Option<String>,
+    /// 固定订阅链接（客户端登录后据此自动拉取 Clash 订阅）
+    pub subscription_url: String,
 }
 
 /// POST /login
@@ -232,6 +235,8 @@ pub async fn login(State(state): State<AppState>, Json(req): Json<LoginRequest>)
     }
 
     let active_devices = count_user_devices(pool, user.id).await? as u32;
+    let sub_key = ensure_subscription_key(pool, user.id).await?;
+    let subscription_url = format!("{}/sub/{}", state.cfg.public_base_url.trim_end_matches('/'), sub_key);
 
     Ok(Json(LoginResponse {
         token,
@@ -240,6 +245,7 @@ pub async fn login(State(state): State<AppState>, Json(req): Json<LoginRequest>)
         max_devices: user.max_devices as u32,
         active_devices,
         account_expires_at: user.expires_at.clone(),
+        subscription_url,
     }))
 }
 
@@ -284,6 +290,35 @@ pub async fn get_config(
         return Err(AppError::forbidden("账号不可用"));
     }
 
+    let template = clash::get_template(pool).await?;
+    let yaml = clash::render(&template, &token);
+
+    Ok((
+        StatusCode::OK,
+        [(axum::http::header::CONTENT_TYPE, "application/x-yaml; charset=utf-8")],
+        yaml,
+    ))
+}
+
+/// GET /sub/:key —— 长期固定的订阅链接。
+///
+/// 与 `/config?token=` 不同，这里用「不随 7 天 Token 轮换而失效」的 `subscription_key`
+/// 寻址，服务端自动注入该用户当前最近活跃设备的 Token。客户端导入一次即可长期自动更新；
+/// 实际连接时客户端 `enhance` 还会用本机最新 Token 覆盖 password，故订阅内的 Token 仅作占位。
+pub async fn get_subscription(State(state): State<AppState>, Path(key): Path<String>) -> AppResult<impl IntoResponse> {
+    let pool = &state.pool;
+    let user = find_user_by_subscription_key(pool, key.trim())
+        .await?
+        .ok_or_else(|| AppError::unauthorized("订阅链接无效"))?;
+    if !user.is_active() {
+        return Err(AppError::forbidden("账号待授权或已停用"));
+    }
+    if user.is_expired() {
+        return Err(AppError::forbidden("账号已过期，请联系管理员续期"));
+    }
+
+    // 注入该用户最近活跃设备的 Token；尚无可用 Token 时留空，连接时由客户端 enhance 注入。
+    let token = latest_active_token(pool, user.id).await?.unwrap_or_default();
     let template = clash::get_template(pool).await?;
     let yaml = clash::render(&template, &token);
 

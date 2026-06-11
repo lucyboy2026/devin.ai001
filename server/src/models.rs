@@ -15,6 +15,8 @@ pub struct User {
     pub max_devices: i64,
     pub expires_at: Option<String>,
     pub note: Option<String>,
+    #[serde(skip_serializing)]
+    pub subscription_key: Option<String>,
     pub created_at: String,
     pub authorized_at: Option<String>,
 }
@@ -65,6 +67,46 @@ pub async fn find_user_by_id(pool: &SqlitePool, id: i64) -> Result<Option<User>>
         .fetch_optional(pool)
         .await?;
     Ok(user)
+}
+
+pub async fn find_user_by_subscription_key(pool: &SqlitePool, key: &str) -> Result<Option<User>> {
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE subscription_key = ?")
+        .bind(key)
+        .fetch_optional(pool)
+        .await?;
+    Ok(user)
+}
+
+/// 返回该用户已绑定的、最近活跃且未过期的设备 Token（用于固定订阅链接注入）。
+pub async fn latest_active_token(pool: &SqlitePool, user_id: i64) -> Result<Option<String>> {
+    let now = Utc::now().to_rfc3339();
+    let row: Option<(String,)> = sqlx::query_as(
+        "SELECT token FROM devices
+         WHERE user_id = ? AND revoked = 0 AND token IS NOT NULL
+           AND (token_expires_at IS NULL OR token_expires_at > ?)
+         ORDER BY last_seen_at DESC LIMIT 1",
+    )
+    .bind(user_id)
+    .bind(&now)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|r| r.0))
+}
+
+/// 确保用户拥有固定订阅密钥；缺失时生成并持久化，返回该密钥。
+pub async fn ensure_subscription_key(pool: &SqlitePool, user_id: i64) -> Result<String> {
+    if let Some(user) = find_user_by_id(pool, user_id).await? {
+        if let Some(key) = user.subscription_key.filter(|s| !s.is_empty()) {
+            return Ok(key);
+        }
+    }
+    let key = crate::auth::gen_token();
+    sqlx::query("UPDATE users SET subscription_key = ? WHERE id = ?")
+        .bind(&key)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+    Ok(key)
 }
 
 pub async fn list_users(pool: &SqlitePool) -> Result<Vec<User>> {
