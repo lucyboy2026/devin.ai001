@@ -108,12 +108,23 @@ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /
 apt-get update && apt-get install -y caddy
 
 cat >/etc/caddy/Caddyfile <<'EOF'
+{
+    # 若本机已有服务占用 UDP 443（如 hysteria2/QUIC），关闭 Caddy 的 HTTP/3，
+    # 只用 TCP 80/443，避免 "listen udp :443: bind: address already in use"
+    servers {
+        protocols h1 h2
+    }
+}
+
 你的域名 {
     reverse_proxy 127.0.0.1:8080
 }
 EOF
+systemctl enable --now caddy
 systemctl restart caddy
 ```
+
+> ⚠️ **与 hysteria2 共存（UDP 443 冲突）**：本服务常和 hysteria2 部署在同一台机器，而 hysteria2 通常监听 **UDP 443（QUIC）**。Caddy 默认会尝试在 UDP 443 上同时起 HTTP/3 监听，于是启动失败并报 `listen udp :443: bind: address already in use`。上面 Caddyfile 全局段的 `protocols h1 h2` 即用于**关闭 HTTP/3**——HTTPS 仍走 TCP 443，与 hysteria2 的 UDP 443 互不冲突。可用 `ss -ulnp | grep :443` 查看 UDP 443 的占用方。
 
 无域名（仅测试）：把 `.env` 的 `BIND_ADDR=0.0.0.0:8080`、`PUBLIC_BASE_URL=http://77.73.8.38:8080`，并放行防火墙端口 8080。客户端服务器地址填 `http://77.73.8.38:8080`。
 
