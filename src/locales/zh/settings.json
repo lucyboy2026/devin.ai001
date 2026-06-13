@@ -158,17 +158,21 @@
       "fields": {
         "server": "服务器地址",
         "username": "用户名",
-        "password": "密码"
+        "password": "密码",
+        "email": "邮箱"
       },
       "placeholders": {
         "server": "https://auth.example.com",
         "username": "用户名",
-        "password": "密码"
+        "password": "密码",
+        "email": "you@example.com"
       },
       "actions": {
         "login": "登录",
         "logout": "登出",
-        "relogin": "重新登录"
+        "relogin": "重新登录",
+        "register": "注册",
+        "importSubscription": "导入订阅"
       },
       "messages": {
         "loginSuccess": "登录成功",
@@ -176,7 +180,20 @@
         "logoutSuccess": "已登出",
         "serverRequired": "服务器地址不能为空",
         "usernameRequired": "用户名不能为空",
-        "passwordRequired": "密码不能为空"
+        "passwordRequired": "密码不能为空",
+        "registerSuccess": "注册已提交，等待管理员授权",
+        "registerFailed": "注册失败",
+        "emailRequired": "请输入邮箱",
+        "emailInvalid": "邮箱格式不正确",
+        "subscriptionImported": "订阅已导入",
+        "subscriptionImportFailed": "导入订阅失败"
+      },
+      "accountExpiresAt": "账号到期",
+      "noExpiry": "长期有效",
+      "subscription": "订阅链接",
+      "tabs": {
+        "login": "登录",
+        "register": "注册"
       }
     }
   },

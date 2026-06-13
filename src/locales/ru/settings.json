@@ -158,17 +158,21 @@
       "fields": {
         "server": "Server address",
         "username": "Username",
-        "password": "Password"
+        "password": "Password",
+        "email": "Email"
       },
       "placeholders": {
         "server": "https://auth.example.com",
         "username": "Username",
-        "password": "Password"
+        "password": "Password",
+        "email": "you@example.com"
       },
       "actions": {
         "login": "Sign in",
         "logout": "Sign out",
-        "relogin": "Sign in again"
+        "relogin": "Sign in again",
+        "register": "Register",
+        "importSubscription": "Import subscription"
       },
       "messages": {
         "loginSuccess": "Signed in",
@@ -176,7 +180,20 @@
         "logoutSuccess": "Signed out",
         "serverRequired": "Server address is required",
         "usernameRequired": "Username is required",
-        "passwordRequired": "Password is required"
+        "passwordRequired": "Password is required",
+        "registerSuccess": "Registration submitted, awaiting admin approval",
+        "registerFailed": "Registration failed",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Invalid email format",
+        "subscriptionImported": "Subscription imported",
+        "subscriptionImportFailed": "Failed to import subscription"
+      },
+      "accountExpiresAt": "Account expires",
+      "noExpiry": "No expiry",
+      "subscription": "Subscription link",
+      "tabs": {
+        "login": "Sign in",
+        "register": "Register"
       }
     }
   },
