@@ -2,6 +2,8 @@
 
 > 你从 Windows PowerShell `ssh` 登录到这台 **Linux** VPS 后，按下面逐条执行即可。
 > 占位符（如域名、邮箱、Bot Token）按提示替换。
+>
+> 想要「带预期输出、含端到端实测」的分步演练，见 [`DEPLOY_TEST.md`](./DEPLOY_TEST.md)。
 
 ## 0. 登录
 

@@ -41,7 +41,7 @@ cp .env.example .env   # 按需修改
 cargo run              # 默认监听 0.0.0.0:8080，SQLite 落在 data/nodeauth.db
 ```
 
-配置项见 [`.env.example`](./.env.example)。部署到 VPS 见 [`DEPLOY.md`](./DEPLOY.md)。
+配置项见 [`.env.example`](./.env.example)。部署到 VPS 见 [`DEPLOY.md`](./DEPLOY.md)；带预期输出的「分步部署 + 端到端实测」演练见 [`DEPLOY_TEST.md`](./DEPLOY_TEST.md)。
 
 ## 测试
 
