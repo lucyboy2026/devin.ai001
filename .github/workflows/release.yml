@@ -601,30 +601,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  submit-to-winget:
-    if: ${{ !contains(github.ref_name, '-rc') }}
-    name: Submit to Winget
-    runs-on: ubuntu-latest
-    needs: [update_tag, release-update]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - name: Get Version
-        run: |
-          sudo apt-get update
-          sudo apt-get install jq
-          echo "VERSION=$(cat package.json | jq '.version' | tr -d '"')" >> $GITHUB_ENV
-      - name: Submit to Winget
-        uses: vedantmgoyal9/winget-releaser@main
-        with:
-          identifier: ClashVergeRev.ClashVergeRev
-          version: ${{env.VERSION}}
-          release-tag: v${{env.VERSION}}
-          installers-regex: '_(arm64|x64|x86)-setup\.exe$'
-          token: ${{ secrets.WINGET_TOKEN  }}
-
   notify-telegram:
     if: ${{ !contains(github.ref_name, '-rc') }}
     name: Notify Telegram
@@ -634,7 +610,6 @@ jobs:
         update_tag,
         release-update,
         release-update-for-fixed-webview2,
-        submit-to-winget,
       ]
     steps:
       - name: Checkout repository
